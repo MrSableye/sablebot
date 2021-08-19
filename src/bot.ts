@@ -31,7 +31,7 @@ const createRepositoryUpdateHtml = (repository: Repository, compareUrl: string, 
 };
 
 const createCommitHtml = (commit: Commit) => {
-  return `<div><a href="${commit.url}"><code>${commit.id.slice(0, 7)}</code></a> ${shortenText(commit.message, 20)} - ${commit.author.name}</div>`;
+  return `<div><a href="${commit.url}"><code>${commit.id.slice(0, 7)}</code></a> ${shortenText(commit.message, 50)} - ${commit.author.name}</div>`;
 };
 
 const createPushHtml = ({ payload }: EmitterWebhookEvent<'push'>) => {
