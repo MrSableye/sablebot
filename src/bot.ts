@@ -35,7 +35,7 @@ const createCommitHtml = (commit: Commit) => {
 };
 
 const createPushHtml = ({ payload }: EmitterWebhookEvent<'push'>) => {
-  let htmlContent = `<div class="pad">`;
+  let htmlContent = `<div>`;
 
   htmlContent += createUserHtml(payload.sender);
   htmlContent += createRepositoryUpdateHtml(payload.repository, payload.compare, payload.commits, payload.ref);
