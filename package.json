@@ -15,11 +15,18 @@
   "author": "Mr. Sableye <mister.sableye@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "@types/exchange-rates-api": "^1.0.0",
+    "@types/koa": "^2.13.4",
+    "@types/koa-router": "^7.4.4",
     "@types/node": "^16.6.2",
     "typescript": "^4.3.5"
   },
   "dependencies": {
     "@octokit/webhooks": "^9.12.0",
-    "@showderp/pokemon-showdown-ts": "^0.2.15"
+    "@showderp/pokemon-showdown-ts": "^0.2.15",
+    "exchange-rates-api": "^1.1.0",
+    "koa": "^2.13.1",
+    "koa-body": "^4.2.0",
+    "koa-router": "^10.0.0"
   }
 }

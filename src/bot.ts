@@ -1,57 +1,17 @@
-import http from 'http';
-import { EmitterWebhookEvent, Webhooks, createNodeMiddleware } from '@octokit/webhooks';
+import Koa from 'koa';
+import KoaBody from 'koa-body'
+import Router from 'koa-router';
 import { ManagedShowdownClient } from '@showderp/pokemon-showdown-ts';
-import { Commit, Repository, User } from '@octokit/webhooks-types';
+import { createGithubHandler } from './github';
+import { createKoFiDonationHandler } from './ko-fi';
 
 interface BotSettings {
   showdownUsername: string;
   showdownPassword: string;
   httpServerPort: number;
   webhookSecret: string;
+  koFiDonationStorePath: string;
 }
-
-const shortenText = (textToShorten: string, maxLength: number) => {
-  if (textToShorten.length > maxLength) {
-    return textToShorten.slice(0, maxLength) + '…';
-  }
-
-  return textToShorten;
-};
-
-const createUserHtml = (user: User) => {
-  return `<div><a href="${user.url}"><img src="${user.avatar_url}" width=16 height=16 /> <strong>${user.login}</strong></a></div>`;
-};
-
-const getBranchFromRef = (ref: string) => ref.split('/').slice(-1)[0];
-
-const createRepositoryUpdateHtml = (repository: Repository, compareUrl: string, commits: Commit[], ref: string) => {
-  const branch = getBranchFromRef(ref);
-
-  return `<div><a href="${compareUrl}"><strong>[${repository.full_name}:${branch}] ${commits.length} new commits</strong></a></div>`;
-};
-
-const createCommitHtml = (commit: Commit) => {
-  return `<div><a href="${commit.url}"><code>${commit.id.slice(0, 7)}</code></a> ${shortenText(commit.message, 50)} - ${commit.author.name}</div>`;
-};
-
-const createPushHtml = ({ payload }: EmitterWebhookEvent<'push'>) => {
-  let htmlContent = `<div>`;
-
-  htmlContent += createUserHtml(payload.sender);
-  htmlContent += createRepositoryUpdateHtml(payload.repository, payload.compare, payload.commits, payload.ref);
-
-  let commitElements = payload.commits.map(createCommitHtml);
-  if (commitElements.length > 6) {
-    commitElements = [
-      ...commitElements.slice(0, 3),
-      `<div>${commitElements.length - 6} commits omitted</div>`,
-      ...commitElements.slice(-3),
-    ];
-  }
-  htmlContent += commitElements.join('');
-
-  return htmlContent + '</div>';
-};
 
 const createShowdownClient = async (username: string, password: string) => {
   const showdownClient = new ManagedShowdownClient({
@@ -73,33 +33,34 @@ const createShowdownClient = async (username: string, password: string) => {
   return showdownClient;
 };
 
-const createWebhookServer = (secret: string) => {
-  const webhooks = new Webhooks({
-    secret,
-  });
-
-  const httpServer = http.createServer(createNodeMiddleware(webhooks, { path: '/github' }));
-
-  return {
-    httpServer,
-    webhooks,
-  };
-};
-
 export const createBot = async ({
   showdownUsername,
   showdownPassword,
   httpServerPort,
   webhookSecret,
+  koFiDonationStorePath,
 }: BotSettings) => {
-  const { httpServer, webhooks } = createWebhookServer(webhookSecret);
   const showdownClient = await createShowdownClient(showdownUsername, showdownPassword);
-  
-  webhooks.on('push', async (pushEvent) => {
-    const pushHtml = createPushHtml(pushEvent);
+  const githubHandler = createGithubHandler(webhookSecret, showdownClient);
+  const koFiHandler = createKoFiDonationHandler(koFiDonationStorePath, showdownClient);
 
-    await showdownClient.send(`lobby|/addhtmlbox ${pushHtml}`);
-  });
+  const app = new Koa();
+  app.use(KoaBody());
 
-  httpServer.listen(httpServerPort);
+  const router = new Router();
+  router
+    .post('/github', async (ctx) => {
+      const id = ctx.headers['x-github-delivery'];
+      const name = ctx.headers['x-github-event'];
+      const payload = ctx.request.body;
+      const signature = ctx.headers['x-hub-signature-256'];
+
+      githubHandler(id as string, name as any, payload as string, signature as string);
+    })
+    .post('/kofi', async (ctx) => {
+      koFiHandler(JSON.parse(ctx.request.body.data));
+    });
+
+  app.use(router.routes());
+  app.listen(httpServerPort);
 };
