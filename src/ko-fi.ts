@@ -41,6 +41,16 @@ type KoFiEvent = Partial<{
   is_public: boolean;
 }>;
 
+const createDonationHtml = (username: string, amount: number, url?: string) => {
+  let amountText = `$${amount} USD`;
+
+  if (url) {
+    amountText = `<a href="${url}">${amountText}</a>`;
+  }
+
+  return `<div><strong>${username}</strong> donated ${amountText}! Thank you for your support!</div>`;
+};
+
 const toID = (text: string) => ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');;
 const showdownRegex = /\[\s*showdown\:(?<username>.+)\s*\]/;
 const getShowdownUsername = (message: string) => {
@@ -68,7 +78,7 @@ export const createKoFiDonationHandler = (
   }
 
   return async (event: KoFiEvent) => {
-    const { message, amount, currency, is_public } = event;
+    const { message, amount, currency, is_public, url } = event;
 
     if (message && amount && currency) {
       const showdownUsername = getShowdownUsername(message);
@@ -77,7 +87,7 @@ export const createKoFiDonationHandler = (
         const amountNumeric = parseFloat(amount);
 
         if (!Number.isNaN(amountNumeric)) {
-          const amountUSD = await convert(amountNumeric, currency, 'USD');
+          const amountUSD = parseFloat((await convert(amountNumeric, currency, 'USD')).toFixed(2));
           if (!donationStore.donations[showdownUsername]) donationStore.donations[showdownUsername] = 0;
           donationStore.donations[showdownUsername] += amountUSD;
           updateStore();
@@ -85,7 +95,8 @@ export const createKoFiDonationHandler = (
           const totalDonations = donationStore.donations[showdownUsername];
 
           if (amountUSD >= 5 && (is_public !== undefined) && is_public) {
-            await showdownClient.send(`lobby|${showdownUsername} donated $${amountUSD} USD!`);
+            const donationHtml = createDonationHtml(showdownUsername, amountUSD, url);
+            await showdownClient.send(`lobby|/addhtmlbox ${donationHtml}`);
           }
 
           if (totalDonations >= 5) {

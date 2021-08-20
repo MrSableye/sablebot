@@ -19,7 +19,6 @@ const createShowdownClient = async (username: string, password: string) => {
     throttle: 200,
     server: 'clover.weedl.es',
     port: 8443,
-    debug: true,
   });
 
   // TODO: Figure out why TLS isn't working properly
