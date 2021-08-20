@@ -82,8 +82,22 @@ export const createKoFiDonationHandler = (
           donationStore.donations[showdownUsername] += amountUSD;
           updateStore();
 
+          const totalDonations = donationStore.donations[showdownUsername];
+
           if (amountUSD >= 5 && (is_public !== undefined) && is_public) {
             await showdownClient.send(`lobby|${showdownUsername} donated $${amountUSD} USD!`);
+          }
+
+          if (totalDonations >= 5) {
+            await showdownClient.send(`lobby|/badge grant ${showdownUsername},smalldonor`);
+
+            if (totalDonations >= 10) {
+              await showdownClient.send(`lobby|/badge grant ${showdownUsername},mediumdonor`);
+
+              if (totalDonations >= 20) {
+                await showdownClient.send(`lobby|/badge grant ${showdownUsername},largedonor`);
+              }
+            }
           }
         }
       }
