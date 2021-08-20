@@ -57,9 +57,13 @@ export const createBot = async ({
       const signature = ctx.headers['x-hub-signature-256'];
 
       githubHandler(id as string, name as any, payload as string, signature as string);
+      ctx.status = 201;
+      ctx.body = '';
     })
     .post(`/kofi/${koFiDonationSecret}`, async (ctx) => {
       koFiHandler(JSON.parse(ctx.request.body.data));
+      ctx.status = 201;
+      ctx.body = '';
     });
 
   app.use(router.routes());
