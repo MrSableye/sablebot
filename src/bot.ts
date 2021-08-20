@@ -11,6 +11,7 @@ interface BotSettings {
   httpServerPort: number;
   webhookSecret: string;
   koFiDonationStorePath: string;
+  koFiDonationSecret: string,
 }
 
 const createShowdownClient = async (username: string, password: string) => {
@@ -38,6 +39,7 @@ export const createBot = async ({
   httpServerPort,
   webhookSecret,
   koFiDonationStorePath,
+  koFiDonationSecret,
 }: BotSettings) => {
   const showdownClient = await createShowdownClient(showdownUsername, showdownPassword);
   const githubHandler = createGithubHandler(webhookSecret, showdownClient);
@@ -56,7 +58,7 @@ export const createBot = async ({
 
       githubHandler(id as string, name as any, payload as string, signature as string);
     })
-    .post('/kofi', async (ctx) => {
+    .post(`/kofi/${koFiDonationSecret}`, async (ctx) => {
       koFiHandler(JSON.parse(ctx.request.body.data));
     });
 
