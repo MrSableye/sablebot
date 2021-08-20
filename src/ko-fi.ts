@@ -1,6 +1,26 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { convert } from 'exchange-rates-api';
+import { exchangeRates } from 'exchange-rates-api';
 import { ManagedShowdownClient } from '@showderp/pokemon-showdown-ts';
+
+ const convert = (amount: number, fromCurrency: string, toCurrency: string) => {
+  if (typeof amount !== 'number') {
+    throw new TypeError('The \'amount\' parameter has to be a number');
+  }
+
+  if (Array.isArray(toCurrency)) {
+    throw new TypeError('Cannot convert to multiple currencies at the same time');
+  }
+
+  const instance = exchangeRates();
+  (instance as any).setApiBaseUrl('https://api.exchangerate.host');
+  instance.latest();
+
+  return instance
+    .base(fromCurrency)
+    .symbols(toCurrency)
+    .fetch()
+    .then((rate) => (rate as number) * amount);
+};
 
 interface DonationStore {
   donations: Record<string, number>;
@@ -57,7 +77,7 @@ export const createKoFiDonationHandler = (
         const amountNumeric = parseFloat(amount);
 
         if (!Number.isNaN(amountNumeric)) {
-          const amountUSD = await convert(amountNumeric, currency, 'USD', new Date());
+          const amountUSD = await convert(amountNumeric, currency, 'USD');
           if (!donationStore.donations[showdownUsername]) donationStore.donations[showdownUsername] = 0;
           donationStore.donations[showdownUsername] += amountUSD;
           updateStore();
