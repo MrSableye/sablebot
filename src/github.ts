@@ -15,7 +15,7 @@ const shortenText = (textToShorten: string, maxLength: number) => {
 };
 
 const createUserHtml = (user: User) => {
-  return `<div style="margin-bottom: 12px;"><a href="${user.html_url}"><img src="${user.avatar_url}?size=24" width=24 height=24 style="border-radius: 50%;" /> <strong style="font-size: 14px; vertical-align:super;">${user.login}</strong></a></div>`;
+  return `<div><img src="${user.avatar_url}&size=24" width=24 height=24 style="border-radius: 50%;" /> <a href="${user.html_url}"><strong style="font-size: 14px; vertical-align:super;">${user.login}</a></strong></div>`;
 };
 
 const getBranchFromRef = (ref: string) => ref.split('/').slice(-1)[0];
@@ -23,7 +23,7 @@ const getBranchFromRef = (ref: string) => ref.split('/').slice(-1)[0];
 const createRepositoryUpdateHtml = (repository: Repository, compareUrl: string, commits: Commit[], ref: string) => {
   const branch = getBranchFromRef(ref);
 
-  return `<div style="margin-bottom: 12px;"><a href="${compareUrl}"><strong>[${repository.full_name}:${branch}] ${commits.length} new commits</strong></a></div>`;
+  return `<div style="margin-bottom: 6px;"><a href="${compareUrl}"><strong>[${repository.full_name}:${branch}] ${commits.length} new commits</strong></a></div>`;
 };
 
 const createCommitHtml = (commit: Commit) => {
