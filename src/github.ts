@@ -15,7 +15,7 @@ const shortenText = (textToShorten: string, maxLength: number) => {
 };
 
 const createUserHtml = (user: User) => {
-  return `<div><img src="${user.avatar_url}&size=24" width=24 height=24 style="border-radius: 50%;" /> <a href="${user.html_url}"><strong style="font-size: 14px; vertical-align:super;">${user.login}</a></strong></div>`;
+  return `<div><img src="${user.avatar_url}&size=24" width=24 height=24 style="border-radius: 50%;" /> <a href="${user.html_url}"><strong style="font-size: 14px; vertical-align:super;">${user.login}</strong></a></div>`;
 };
 
 const getBranchFromRef = (ref: string) => ref.split('/').slice(-1)[0];
