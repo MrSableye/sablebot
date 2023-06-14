@@ -77,11 +77,11 @@ export const createBot = async ({
   const adminRouter = new Router();
   adminApp.use(KoaBody());
   adminRouter
-    .get(`/admin/${adminSecret}/hotpatch`, async () => {
+    .post(`/admin/${adminSecret}/hotpatch`, async () => {
       await showdownClient.send('lobby|/hotpatch formats,notify');
       await showdownClient.send('lobby|/hotpatch chat,notify');
     });
   
   adminApp.use(adminRouter.routes());
-  adminApp.listen(adminPort, 'localhost');
+  adminApp.listen(adminPort, '127.0.0.1');
 };
