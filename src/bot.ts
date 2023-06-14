@@ -83,5 +83,5 @@ export const createBot = async ({
     });
   
   adminApp.use(adminRouter.routes());
-  app.listen(adminPort, 'localhost');
+  adminApp.listen(adminPort, 'localhost');
 };
