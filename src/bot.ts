@@ -11,7 +11,9 @@ interface BotSettings {
   httpServerPort: number;
   webhookSecret: string;
   koFiDonationStorePath: string;
-  koFiDonationSecret: string,
+  koFiDonationSecret: string;
+  adminSecret: string;
+  adminPort: number;
 }
 
 const createShowdownClient = async (username: string, password: string) => {
@@ -40,6 +42,8 @@ export const createBot = async ({
   webhookSecret,
   koFiDonationStorePath,
   koFiDonationSecret,
+  adminSecret,
+  adminPort,
 }: BotSettings) => {
   const showdownClient = await createShowdownClient(showdownUsername, showdownPassword);
   const githubHandler = createGithubHandler(webhookSecret, showdownClient);
@@ -68,4 +72,16 @@ export const createBot = async ({
 
   app.use(router.routes());
   app.listen(httpServerPort);
+
+  const adminApp = new Koa();
+  const adminRouter = new Router();
+  adminApp.use(KoaBody());
+  adminRouter
+    .get(`/admin/${adminSecret}/hotpatch`, async () => {
+      await showdownClient.send('lobby|/hotpatch formats,notify');
+      await showdownClient.send('lobby|/hotpatch chat,notify');
+    });
+  
+  adminApp.use(adminRouter.routes());
+  app.listen(adminPort, 'localhost');
 };
