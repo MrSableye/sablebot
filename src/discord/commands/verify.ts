@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { APIEmbed, Interaction, SlashCommandBuilder } from 'discord.js';
 import { CommandConfiguration } from '../types';
 
-const BOT_USERNAME = 'Sablebot';
+const BOT_USERNAME = 'Mr. Sablebot';
 const DEFAULT_TOKEN_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
 const configuration = new SlashCommandBuilder()
