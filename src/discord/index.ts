@@ -50,6 +50,7 @@ export const createDiscordHandler = async (
         discordStore.showdownToDiscord[showdownUserId] = tokenInfo.userId;
         updateStore();
         showdownClient.send(`|/pm ${showdownUserId},Verified ${tokenInfo.userId}`);
+        showdownClient.send(`|/databadge discord set ${showdownUserId},${tokenInfo.userId}`);
       } else {
         showdownClient.send(`|/pm ${showdownUserId},Invalid token`);
       }
