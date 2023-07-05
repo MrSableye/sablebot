@@ -49,9 +49,9 @@ export const createDiscordHandler = async (
         discordStore.discordToShowdown[tokenInfo.userId] = showdownUserId;
         discordStore.showdownToDiscord[showdownUserId] = tokenInfo.userId;
         updateStore();
-        showdownClient.send(`/pm ${showdownUserId},Verified ${tokenInfo.userId}`);
+        showdownClient.send(`|/pm ${showdownUserId},Verified ${tokenInfo.userId}`);
       } else {
-        showdownClient.send(`/pm ${showdownUserId},Invalid token`);
+        showdownClient.send(`|/pm ${showdownUserId},Invalid token`);
       }
     }
   });
