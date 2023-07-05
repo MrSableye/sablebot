@@ -20,14 +20,14 @@ const verifyCommand: CommandConfiguration = {
   configuration,
   createHandler: (store) => {
     return async (interaction) => {
+      if (!interaction.isCommand()) return;
+
       const token = store.getOrCreateToken(interaction.user.id);
 
-      if (interaction.isRepliable()) {
-        await interaction.reply({
-          ephemeral: true,
-          embeds: [verificationEmbed(token)],
-        });
-      }
+      await interaction.reply({
+        ephemeral: true,
+        embeds: [verificationEmbed(token)],
+      });
     };
   },
 };

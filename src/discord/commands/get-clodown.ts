@@ -29,19 +29,19 @@ const getClodownCommand: CommandConfiguration = {
     .setDescription("Retrieves a Discord user's Clovermon Showdown user"),
   createHandler: (store) => {
     return async (interaction) => {
-      if (interaction.isChatInputCommand()) {
-        const user = interaction.options.getUser('user', true);
-        const showdownId = store.getShowdownIdByDiscordId(user.id);
+      if (!interaction.isCommand()) return;
 
-        if (showdownId) {
-          await interaction.reply({
-            embeds: [userEmbed(user, showdownId)],
-          });
-        } else {
-          await interaction.reply({
-            embeds: [noUserEmbed(user)],
-          });
-        }
+      const user = interaction.options.getUser('user', true);
+      const showdownId = store.getShowdownIdByDiscordId(user.id);
+
+      if (showdownId) {
+        await interaction.reply({
+          embeds: [userEmbed(user, showdownId)],
+        });
+      } else {
+        await interaction.reply({
+          embeds: [noUserEmbed(user)],
+        });
       }
     }
   }
