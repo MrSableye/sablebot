@@ -14,12 +14,13 @@ export const createDiscordHandler = async (
   const store = createStore(discordStorePath);
   const handlers = Object.entries(commands).reduce((allHandlers, [commandName, command]) => {
     return {
+      ...allHandlers,
       [commandName]: command.createHandler(store),
     }
   }, {} as Record<string, CommandHandler>);
 
   discordClient.on('interactionCreate', async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
+    if (!interaction.isCommand()) return;
 
     const handler = handlers[interaction.commandName];
     if (!handler) return;
