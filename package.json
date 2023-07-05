@@ -24,6 +24,8 @@
   "dependencies": {
     "@octokit/webhooks": "^9.12.0",
     "@showderp/pokemon-showdown-ts": "^0.2.15",
+    "discord.js": "^14.11.0",
+    "dotenv": "^16.3.1",
     "exchange-rates-api": "^1.1.0",
     "koa": "^2.13.1",
     "koa-body": "^4.2.0",

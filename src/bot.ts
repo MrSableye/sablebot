@@ -1,9 +1,11 @@
 import Koa from 'koa';
 import KoaBody from 'koa-body'
 import Router from 'koa-router';
+import { Client } from 'discord.js';
 import { ManagedShowdownClient } from '@showderp/pokemon-showdown-ts';
 import { createGithubHandler } from './github';
 import { createKoFiDonationHandler } from './ko-fi';
+import { createDiscordHandler } from './discord';
 
 interface BotSettings {
   showdownUsername: string;
@@ -14,6 +16,8 @@ interface BotSettings {
   koFiDonationSecret: string;
   adminSecret: string;
   adminPort: number;
+  discordToken: string;
+  discordStorePath: string;
 }
 
 const createShowdownClient = async (username: string, password: string) => {
@@ -35,6 +39,12 @@ const createShowdownClient = async (username: string, password: string) => {
   return showdownClient;
 };
 
+const createDiscordClient = async (token: string) => {
+  const client = new Client({ intents: [] });
+  await client.login(token);
+  return client;
+};
+
 export const createBot = async ({
   showdownUsername,
   showdownPassword,
@@ -44,10 +54,14 @@ export const createBot = async ({
   koFiDonationSecret,
   adminSecret,
   adminPort,
+  discordToken,
+  discordStorePath,
 }: BotSettings) => {
   const showdownClient = await createShowdownClient(showdownUsername, showdownPassword);
   const githubHandler = createGithubHandler(webhookSecret, showdownClient);
   const koFiHandler = createKoFiDonationHandler(koFiDonationStorePath, showdownClient);
+  const discordClient = await createDiscordClient(discordToken);
+  createDiscordHandler(discordClient, showdownClient, discordStorePath);
 
   const app = new Koa();
   app.use(KoaBody());

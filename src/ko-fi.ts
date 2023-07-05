@@ -51,7 +51,7 @@ const createDonationHtml = (username: string, amount: number, url?: string) => {
   return `<div><strong>${username}</strong> donated ${amountText}! Thank you for your support!</div>`;
 };
 
-const toID = (text: string) => ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');;
+const toID = (text: string) => ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');
 const showdownRegex = /\[\s*showdown\:(?<username>.+)\s*\]/;
 const getShowdownUsername = (message: string) => {
   const regexResult = showdownRegex.exec(message);
