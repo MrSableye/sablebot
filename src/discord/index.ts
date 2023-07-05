@@ -1,41 +1,30 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { Client } from 'discord.js';
 import { commands } from './commands';
 import { ManagedShowdownClient } from '@showderp/pokemon-showdown-ts';
-import { activeTokens } from './commands/verify';
+import { createStore } from './store';
+import { CommandHandler } from './types';
 
 const toID = (text: string) => ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');
-
-interface DiscordStore {
-  discordToShowdown: Record<string, string>;
-  showdownToDiscord: Record<string, string>;
-}
-
-let discordStore: DiscordStore = {
-  discordToShowdown: {},
-  showdownToDiscord: {},
-};
 
 export const createDiscordHandler = async (
   discordClient: Client,
   showdownClient: ManagedShowdownClient,
   discordStorePath: string,
 ) => {
-  if (existsSync(discordStorePath)) {
-    discordStore = JSON.parse(readFileSync(discordStorePath, 'utf8'));
-  }
-
-  const updateStore = () => {
-    writeFileSync(discordStorePath, JSON.stringify(discordStore));
-  }
+  const store = createStore(discordStorePath);
+  const handlers = Object.entries(commands).reduce((allHandlers, [commandName, command]) => {
+    return {
+      [commandName]: command.createHandler(store),
+    }
+  }, {} as Record<string, CommandHandler>);
 
   discordClient.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    const command = commands[interaction.commandName];
-    if (!command) return;
+    const handler = handlers[interaction.commandName];
+    if (!handler) return;
 
-    await command.handler(interaction);
+    await handler(interaction);
   });
 
   showdownClient.eventEmitter.on('pm', (pmEvent) => {
@@ -44,11 +33,9 @@ export const createDiscordHandler = async (
 
     if (message.startsWith('$verify ')) {
       const [, receivedToken] = message.split('$verify ');
-      const tokenInfo = activeTokens[receivedToken];
+      const tokenInfo = store.getToken(receivedToken);
       if (tokenInfo) {
-        discordStore.discordToShowdown[tokenInfo.userId] = showdownUserId;
-        discordStore.showdownToDiscord[showdownUserId] = tokenInfo.userId;
-        updateStore();
+        store.addDiscordAssociation(tokenInfo.userId, showdownUserId);
         showdownClient.send(`|/pm ${showdownUserId},Verified ${tokenInfo.userId}`);
         showdownClient.send(`|/databadge discord set ${showdownUserId},${tokenInfo.userId}`);
       } else {

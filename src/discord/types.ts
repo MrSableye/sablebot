@@ -1,7 +1,10 @@
 import { Interaction, SlashCommandBuilder } from 'discord.js';
+import { DiscordStore } from './store';
+
+export type CommandHandler = (interaction: Interaction) => Promise<void>;
 
 export interface CommandConfiguration {
   name: string;
   configuration: SlashCommandBuilder;
-  handler: (interaction: Interaction) => Promise<void>;
+  createHandler: (store: DiscordStore) => CommandHandler;
 }

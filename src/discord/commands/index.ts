@@ -1,6 +1,8 @@
 import { CommandConfiguration } from '../types';
-import verifyCommand from './verify';
+import getClodownCommand from './get-clodown';
+import verifyClodownCommand from './verify-clodown';
 
 export const commands: Record<string, CommandConfiguration> = {
-  [verifyCommand.name]: verifyCommand,
+  [getClodownCommand.name]: getClodownCommand,
+  [verifyClodownCommand.name]: verifyClodownCommand,
 };
