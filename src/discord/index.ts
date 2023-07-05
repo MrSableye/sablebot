@@ -42,8 +42,8 @@ export const createDiscordHandler = async (
     const { sender, message } = pmEvent.event[0];
     const showdownUserId = toID(sender.username);
 
-    if (message.startsWith('!verify ')) {
-      const [, receivedToken] = message.split('!verify ');
+    if (message.startsWith('$verify ')) {
+      const [, receivedToken] = message.split('$verify ');
       const tokenInfo = activeTokens[receivedToken];
       if (tokenInfo) {
         discordStore.discordToShowdown[tokenInfo.userId] = showdownUserId;

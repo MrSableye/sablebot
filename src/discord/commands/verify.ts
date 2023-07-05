@@ -39,7 +39,7 @@ const getOrCreateToken = (userId: string) => {
 
 const verificationEmbed = (token: TokenInfo): APIEmbed => ({
   title: 'Clovermon Showdown Verification',
-  description: `PM \`!verify ${token.token}\` to ${BOT_USERNAME}\nExpires at <t:${Math.floor((Date.now() + DEFAULT_TOKEN_TIMEOUT) / 1000)}:T>`,
+  description: `PM \`$verify ${token.token}\` to ${BOT_USERNAME}\nExpires at <t:${Math.floor((Date.now() + DEFAULT_TOKEN_TIMEOUT) / 1000)}:T>`,
 });
 
 const handler = async (interaction: Interaction) => {
