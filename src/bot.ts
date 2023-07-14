@@ -22,7 +22,7 @@ interface BotSettings {
 
 const createShowdownClient = async (username: string, password: string) => {
   const showdownClient = new ManagedShowdownClient({
-    actionUrl: 'https://clover.weedl.es/~~showdown/action.php',
+    actionUrl: 'https://clover.weedl.es/~~clodown/action.php',
     throttle: 200,
     server: 'clover.weedl.es',
     port: 8443,
