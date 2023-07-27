@@ -92,6 +92,7 @@ export const createBot = async ({
   adminApp.use(KoaBody());
   adminRouter
     .post(`/admin/${adminSecret}/hotpatch`, async () => {
+      await showdownClient.send('lobby|/addhtmlbox Client changes have been built. Please refresh to see them');
       await showdownClient.send('lobby|/hotpatch formats,notify');
       await showdownClient.send('lobby|/hotpatch chat,notify');
     });
