@@ -36,7 +36,7 @@ const createPushHtml = ({ payload }: EmitterWebhookEvent<'push'>) => {
   htmlContent += createUserHtml(payload.sender);
   htmlContent += createRepositoryUpdateHtml(payload.repository, payload.compare, payload.commits, payload.ref);
 
-  let commitElements = payload.commits.map(createCommitHtml);
+  let commitElements = payload.commits.filter((commit) => !commit.message.includes('[No Bot]')).map(createCommitHtml);
   if (commitElements.length > 6) {
     commitElements = [
       ...commitElements.slice(0, 3),
@@ -57,7 +57,9 @@ export const createGithubHandler = (secret: string, showdownClient: ManagedShowd
   webhooks.on('push', async (pushEvent) => {
     const pushHtml = createPushHtml(pushEvent);
 
-    await showdownClient.send(`lobby|/addhtmlbox ${pushHtml}`);
+    if (pushHtml) {
+      await showdownClient.send(`lobby|/addhtmlbox ${pushHtml}`);
+    }
   });
 
   return (id: string, name: EmitterWebhookEventName, payload: any, signature: string) => {
