@@ -1,5 +1,3 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { execSync } from 'child_process';
 import Koa from 'koa';
 import KoaBody from 'koa-body'
 import Router from 'koa-router';
@@ -8,8 +6,7 @@ import { ManagedShowdownClient } from '@showderp/pokemon-showdown-ts';
 import { createGithubHandler } from './github';
 import { createKoFiDonationHandler } from './ko-fi';
 import { createDiscordHandler } from './discord';
-
-const toID = (text: string) => ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');
+import { createHotpatchHandler } from './hotpatch';
 
 interface BotSettings {
   showdownUsername: string;
@@ -50,10 +47,6 @@ const createDiscordClient = async (token: string) => {
   return client;
 };
 
-interface HotpatchStore {
-  users: Record<string, 'admin' | 'hotpatch'>;
-}
-
 export const createBot = async ({
   showdownUsername,
   showdownPassword,
@@ -72,6 +65,7 @@ export const createBot = async ({
   const koFiHandler = createKoFiDonationHandler(koFiDonationStorePath, showdownClient);
   const discordClient = await createDiscordClient(discordToken);
   createDiscordHandler(discordClient, showdownClient, discordStorePath);
+  createHotpatchHandler(hotpatchAdmin, hotpatchStorePath, hotpatchBuildScriptPath, showdownClient);
 
   const app = new Koa();
   app.use(KoaBody());
@@ -93,72 +87,6 @@ export const createBot = async ({
       ctx.status = 201;
       ctx.body = '';
     });
-
-  let hotpatchInProgress = false;
-  const attemptRebuild = async (senderId: string) => {
-    if (hotpatchInProgress) {
-      await showdownClient.send(`|/pm ${senderId}, Hotpatch already in progress -- please wait and try again`);
-    }
-
-    hotpatchInProgress = true;
-
-    try {
-      await showdownClient.send(`|/pm ${senderId}, Hotpatch request received -- on it!`);
-      await showdownClient.send(`lobby|/addhtmlbox ${senderId} requested a hotpatch, please wait`);
-      execSync(`sh ${hotpatchBuildScriptPath}`);
-      await showdownClient.send('lobby|/addhtmlbox Client changes have been built. Please refresh to see them');
-      await showdownClient.send('lobby|/hotpatch formats,notify');
-      await showdownClient.send('lobby|/hotpatch chat,notify');
-      await showdownClient.send('lobby|/addhtmlbox Server changes have been hotpatched');
-    } catch (e) {
-      await showdownClient.send(`|/pm ${senderId}, Error while hotpatch, please contact and administrator`);
-    }
-
-    hotpatchInProgress = false;
-  };
-
-  let hotpatchStore: HotpatchStore = { users: {} };
-
-
-  if (existsSync(hotpatchStorePath)) {
-    hotpatchStore = JSON.parse(readFileSync(hotpatchStorePath, 'utf8'));
-  }
-
-  const updateStore = () => {
-    writeFileSync(hotpatchStorePath, JSON.stringify(hotpatchStore));
-  }
-
-  showdownClient.eventEmitter.on('pm', async (pmEvent) => {
-    const pm = pmEvent.event[0];
-    const senderId = toID(pm.sender.username);
-    const user = hotpatchStore.users[senderId];
-
-    if (pm.message.startsWith('$hotpatch')) {
-      if (['hotpatch', 'admin'].includes(user)) {
-        attemptRebuild(senderId);
-      }
-    } else if (pm.message.startsWith('$addhotpatch')) {
-      if (toID(hotpatchAdmin) === senderId) {
-        const [, ...rest] = pm.message.split(/\s+/);
-        const userId = toID(rest.join(''));
-        if (userId.length < 21) {
-          hotpatchStore.users[userId] = 'hotpatch';
-          updateStore();
-          await showdownClient.send(`|/pm ${senderId}, Successfully added ${userId}`);
-        }
-      }
-    } else if (pm.message.startsWith('$removehotpatch')) {
-      if (toID(hotpatchAdmin) === senderId) {
-        const [, ...rest] = pm.message.split('\s+');
-        const userId = toID(rest.join(''));
-        if (userId.length < 21) {
-          delete hotpatchStore.users[userId];
-          updateStore();
-          await showdownClient.send(`|/pm ${senderId}, Successfully removed ${userId}`);
-        }
-      }
-    }
-  });
 
   app.use(router.routes());
   app.listen(httpServerPort);
