@@ -135,7 +135,7 @@ export const createBot = async ({
 
     if (pm.message.startsWith('$hotpatch')) {
       if (['hotpatch', 'admin'].includes(user)) {
-        await attemptRebuild(senderId);
+        attemptRebuild(senderId);
       }
     } else if (pm.message.startsWith('$addhotpatch')) {
       if (toID(hotpatchAdmin) === senderId) {
@@ -144,6 +144,7 @@ export const createBot = async ({
         if (userId.length < 21) {
           hotpatchStore.users[userId] = 'hotpatch';
           updateStore();
+          await showdownClient.send(`|/pm ${senderId}, Successfully added ${userId}`);
         }
       }
     } else if (pm.message.startsWith('$removehotpatch')) {
@@ -153,6 +154,7 @@ export const createBot = async ({
         if (userId.length < 21) {
           delete hotpatchStore.users[userId];
           updateStore();
+          await showdownClient.send(`|/pm ${senderId}, Successfully removed ${userId}`);
         }
       }
     }
