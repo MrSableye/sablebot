@@ -37,6 +37,7 @@ const createPushHtml = ({ payload }: EmitterWebhookEvent<'push'>) => {
   htmlContent += createRepositoryUpdateHtml(payload.repository, payload.compare, payload.commits, payload.ref);
 
   let commitElements = payload.commits.filter((commit) => !commit.message.includes('[No Bot]')).map(createCommitHtml);
+  if (!commitElements.length) return;
   if (commitElements.length > 6) {
     commitElements = [
       ...commitElements.slice(0, 3),
