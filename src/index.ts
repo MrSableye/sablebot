@@ -21,8 +21,6 @@ createBot({
   webhookSecret,
   koFiDonationStorePath,
   koFiDonationSecret,
-  adminSecret,
-  adminPort,
   discordToken,
   discordStorePath,
   hotpatchAdmin,

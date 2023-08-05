@@ -18,8 +18,6 @@ interface BotSettings {
   webhookSecret: string;
   koFiDonationStorePath: string;
   koFiDonationSecret: string;
-  adminSecret: string;
-  adminPort: number;
   discordToken: string;
   discordStorePath: string;
   hotpatchAdmin: string;
@@ -63,8 +61,6 @@ export const createBot = async ({
   webhookSecret,
   koFiDonationStorePath,
   koFiDonationSecret,
-  adminSecret,
-  adminPort,
   discordToken,
   discordStorePath,
   hotpatchAdmin,
@@ -98,15 +94,31 @@ export const createBot = async ({
       ctx.body = '';
     });
 
-  const rebuild = async () => {
-    execSync(`sh ${hotpatchBuildScriptPath}`);
-    await showdownClient.send('lobby|/addhtmlbox Client changes have been built. Please refresh to see them');
-    await showdownClient.send('lobby|/hotpatch formats,notify');
-    await showdownClient.send('lobby|/hotpatch chat,notify');
-    await showdownClient.send('lobby|/addhtmlbox Server changes have been hotpatched');
+  let hotpatchInProgress = false;
+  const attemptRebuild = async (senderId: string) => {
+    if (hotpatchInProgress) {
+      await showdownClient.send(`|/pm ${senderId}, Hotpatch already in progress -- please wait and try again`);
+    }
+
+    hotpatchInProgress = true;
+
+    try {
+      await showdownClient.send(`|/pm ${senderId}, Hotpatch request received -- on it!`);
+      await showdownClient.send(`lobby|/addhtmlbox ${senderId} requested a hotpatch, please wait`);
+      execSync(`sh ${hotpatchBuildScriptPath}`);
+      await showdownClient.send('lobby|/addhtmlbox Client changes have been built. Please refresh to see them');
+      await showdownClient.send('lobby|/hotpatch formats,notify');
+      await showdownClient.send('lobby|/hotpatch chat,notify');
+      await showdownClient.send('lobby|/addhtmlbox Server changes have been hotpatched');
+    } catch (e) {
+      await showdownClient.send(`|/pm ${senderId}, Error while hotpatch, please contact and administrator`);
+    }
+
+    hotpatchInProgress = false;
   };
 
   let hotpatchStore: HotpatchStore = { users: {} };
+
 
   if (existsSync(hotpatchStorePath)) {
     hotpatchStore = JSON.parse(readFileSync(hotpatchStorePath, 'utf8'));
@@ -123,13 +135,11 @@ export const createBot = async ({
 
     if (pm.message.startsWith('$hotpatch')) {
       if (['hotpatch', 'admin'].includes(user)) {
-        await showdownClient.send(`|/pm ${senderId}, Hotpatch request received -- on it!`);
-        await showdownClient.send(`lobby|/addhtmlbox ${senderId} requested a hotpatch, please wait`);
-        await rebuild();
+        await attemptRebuild(senderId);
       }
     } else if (pm.message.startsWith('$addhotpatch')) {
       if (toID(hotpatchAdmin) === senderId) {
-        const [, ...rest] = pm.message.split('\s+');
+        const [, ...rest] = pm.message.split(/\s+/);
         const userId = toID(rest.join(''));
         if (userId.length < 21) {
           hotpatchStore.users[userId] = 'hotpatch';
@@ -150,15 +160,4 @@ export const createBot = async ({
 
   app.use(router.routes());
   app.listen(httpServerPort);
-
-  const adminApp = new Koa();
-  const adminRouter = new Router();
-  adminApp.use(KoaBody());
-  adminRouter
-    .post(`/admin/${adminSecret}/hotpatch`, async () => {
-      await rebuild();
-    });
-  
-  adminApp.use(adminRouter.routes());
-  adminApp.listen(adminPort, '127.0.0.1');
 };
