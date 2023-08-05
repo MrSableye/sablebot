@@ -10,6 +10,9 @@ const adminSecret = process.env.ADMIN_SECRET || 'ADMIN_SECRET';
 const adminPort = parseInt(process.env.ADMIN_PORT || '81722', 10);
 const discordToken = process.env.DISCORD_TOKEN || '';
 const discordStorePath = process.env.DISCORD_STORE_PATH || '';
+const hotpatchAdmin = process.env.HOTPATCH_ADMIN || '';
+const hotpatchStorePath = process.env.HOTPATCH_STORE_PATH || '';
+const hotpatchBuildScriptPath = process.env.HOTPATCH_BUILD_SCRIPT_PATH || '';
 
 createBot({
   showdownUsername,
@@ -22,4 +25,7 @@ createBot({
   adminPort,
   discordToken,
   discordStorePath,
+  hotpatchAdmin,
+  hotpatchBuildScriptPath,
+  hotpatchStorePath,
 });
