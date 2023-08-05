@@ -33,9 +33,11 @@ const progressStateToHtml = (hotpatchProgressState: HotpatchProgressState) => {
 const createHotpatchRequestHtml = (hotpatchRequest: HotpatchRequest) => {
   let lines = [];
 
+  lines.push('<div class="infobox">');
   lines.push(`<p><b><u>Hotpatch ${hotpatchRequest.requestId} (<small>Requester: ${hotpatchRequest.requester}</small>)</u></b></p>`);
   lines.push(progressStateToHtml(hotpatchRequest.progress.buildClient));
   lines.push(progressStateToHtml(hotpatchRequest.progress.hotpatch));
+  lines.push('</div>');
 
   return lines.join('');
 };
@@ -57,8 +59,8 @@ export const createHotpatchHandler = (
       requestId: `${senderId}-${Date.now()}`,
       requester: senderId,
       progress: {
-        buildClient: { text: 'Not started', status: 'NOT_STARTED' },
-        hotpatch: { text: 'Not started', status: 'NOT_STARTED' },
+        buildClient: { text: 'Build client', status: 'NOT_STARTED' },
+        hotpatch: { text: 'Request hotpatches', status: 'NOT_STARTED' },
       },
     };
 
@@ -88,14 +90,14 @@ export const createHotpatchHandler = (
       /* Hotpatching formats */
       request.progress.hotpatch = {
         status: 'IN_PROGRESS',
-        text: 'Requesting hotpatch for data and chat plugins...',
+        text: 'Requesting hotpatches for data and chat plugins...',
       };
       await showdownClient.send(createHotpatchRequestUpdate(request));
       await showdownClient.send('lobby|/hotpatch formats,notify');
       await showdownClient.send('lobby|/hotpatch chat,notify');
       request.progress.hotpatch = {
         status: 'COMPLETE',
-        text: 'Hotpatching requests sent -- Please await chat notification that hotpatching has succeeded',
+        text: 'Hotpatches requested -- Please await notification that hotpatching has succeeded',
       };
       await showdownClient.send(createHotpatchRequestUpdate(request));
     } catch (e) {
