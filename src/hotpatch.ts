@@ -53,8 +53,13 @@ export const createHotpatchHandler = (
   hotpatchBuildScriptPath: string,
   showdownClient: ManagedShowdownClient,
 ) => {
+  let hotpatchEnabled = true;
   let hotpatchInProgress = false;
   const attemptRebuild = async (senderId: string) => {
+    if (!hotpatchEnabled) {
+      await showdownClient.send(`|/pm ${senderId}, Hotpatching currently disabled`);
+      return;
+    }
     const request: HotpatchRequest = {
       requestId: `${senderId}-${Date.now()}`,
       requester: senderId,
@@ -146,6 +151,14 @@ export const createHotpatchHandler = (
           updateStore();
           await showdownClient.send(`|/pm ${senderId}, Successfully removed ${userId}`);
         }
+      }
+    } else if (pm.message.startsWith('$toggle')) {
+      if (toID(hotpatchAdmin) !== senderId) return;
+      hotpatchEnabled = !hotpatchEnabled;
+      if (hotpatchEnabled) {
+        await showdownClient.send(`|/pm ${senderId}, Hotpatching is enabled`);
+      } else {
+        await showdownClient.send(`|/pm ${senderId}, Hotpatching is disabled`);
       }
     }
   });
