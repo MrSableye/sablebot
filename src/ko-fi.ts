@@ -21,26 +21,26 @@ type KoFiEvent = Partial<{
   is_public: boolean;
 }>;
 
-const createDonationHtml = (username: string, currency: string, amount: number, url?: string) => {
+const createDonationHtml = (username: string, message: string, currency: string, amount: number, url?: string) => {
   let amountText = `${amount} ${currency}`;
 
   if (url) {
     amountText = `<a href="${url}">${amountText}</a>`;
   }
 
-  return `<div><strong>${username}</strong> donated ${amountText}! Thank you for your support!</div>`;
+  return `<div><strong>${username}</strong> donated ${amountText}: "${message}"</div>`;
 };
 
 const toID = (text: string) => ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');
 const showdownRegex = /\[\s*showdown\:(?<username>.+)\s*\]/;
-const getShowdownUsername = (message: string) => {
+const getShowdownUsername = (message: string): { username?: string, message: string } => {
   const regexResult = showdownRegex.exec(message);
 
   if (regexResult?.groups?.username) {
-    return toID(regexResult.groups.username);
+    return { username: toID(regexResult.groups.username), message: message.replace(showdownRegex, '') };
   }
 
-  return null;
+  return { message };
 };
 
 export const createKoFiDonationHandler = (
@@ -61,40 +61,38 @@ export const createKoFiDonationHandler = (
     const { message, amount, currency, is_public, url } = event;
 
     if (message && amount && currency) {
-      const showdownUsername = getShowdownUsername(message);
+      const { username, message: strippedMessage } = getShowdownUsername(message);
+      const amountNumeric = parseFloat(amount);
 
-      if (showdownUsername) {
-        const amountNumeric = parseFloat(amount);
-
-        if (!Number.isNaN(amountNumeric)) {
-          const amountNumber = parseFloat(amount);
-          if (!donationStore.donations[showdownUsername]) donationStore.donations[showdownUsername] = 0;
+      if (!Number.isNaN(amountNumeric)) {
+        const amountNumber = parseFloat(amount);
+        if (username) {
+          if (!donationStore.donations[username]) donationStore.donations[username] = 0;
           if (!donationStore.history) donationStore.history = [];
           donationStore.history.push({ amount: amountNumber, currency });
           if (currency === 'USD') {
-            donationStore.donations[showdownUsername] += amountNumber;
+            donationStore.donations[username] += amountNumber;
           }
-
+  
           updateStore();
-
-          const totalDonations = donationStore.donations[showdownUsername];
-
-          if ((is_public !== undefined) && is_public) {
-            const donationHtml = createDonationHtml(showdownUsername, currency, amountNumber, url);
-            await showdownClient.send(`lobby|/addhtmlbox ${donationHtml}`);
-          }
-
+  
+          const totalDonations = donationStore.donations[username];
           if (totalDonations >= 5) {
-            await showdownClient.send(`lobby|/badge grant ${showdownUsername},smalldonor`);
-
+            await showdownClient.send(`lobby|/badge grant ${username},smalldonor`);
+  
             if (totalDonations >= 10) {
-              await showdownClient.send(`lobby|/badge grant ${showdownUsername},mediumdonor`);
-
+              await showdownClient.send(`lobby|/badge grant ${username},mediumdonor`);
+  
               if (totalDonations >= 20) {
-                await showdownClient.send(`lobby|/badge grant ${showdownUsername},largedonor`);
+                await showdownClient.send(`lobby|/badge grant ${username},largedonor`);
               }
             }
           }
+        }
+
+        if ((is_public !== undefined) && is_public) {
+          const donationHtml = createDonationHtml(username || 'Anonymous', strippedMessage, currency, amountNumber, url);
+          await showdownClient.send(`lobby|/addhtmlbox ${donationHtml}`);
         }
       }
     }
