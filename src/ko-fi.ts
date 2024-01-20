@@ -1,29 +1,9 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { exchangeRates } from 'exchange-rates-api';
 import { ManagedShowdownClient } from '@showderp/pokemon-showdown-ts';
-
- const convert = (amount: number, fromCurrency: string, toCurrency: string) => {
-  if (typeof amount !== 'number') {
-    throw new TypeError('The \'amount\' parameter has to be a number');
-  }
-
-  if (Array.isArray(toCurrency)) {
-    throw new TypeError('Cannot convert to multiple currencies at the same time');
-  }
-
-  const instance = exchangeRates();
-  (instance as any).setApiBaseUrl('https://api.exchangerate.host');
-  instance.latest();
-
-  return instance
-    .base(fromCurrency)
-    .symbols(toCurrency)
-    .fetch()
-    .then((rate) => (rate as number) * amount);
-};
 
 interface DonationStore {
   donations: Record<string, number>;
+  history?: { amount: number, currency: string }[];
 }
 
 type KoFiEvent = Partial<{
@@ -41,8 +21,8 @@ type KoFiEvent = Partial<{
   is_public: boolean;
 }>;
 
-const createDonationHtml = (username: string, amount: number, url?: string) => {
-  let amountText = `$${amount} USD`;
+const createDonationHtml = (username: string, currency: string, amount: number, url?: string) => {
+  let amountText = `${amount} ${currency}`;
 
   if (url) {
     amountText = `<a href="${url}">${amountText}</a>`;
@@ -87,15 +67,20 @@ export const createKoFiDonationHandler = (
         const amountNumeric = parseFloat(amount);
 
         if (!Number.isNaN(amountNumeric)) {
-          const amountUSD = parseFloat((await convert(amountNumeric, currency, 'USD')).toFixed(2));
+          const amountNumber = parseFloat(amount);
           if (!donationStore.donations[showdownUsername]) donationStore.donations[showdownUsername] = 0;
-          donationStore.donations[showdownUsername] += amountUSD;
+          if (!donationStore.history) donationStore.history = [];
+          donationStore.history.push({ amount: amountNumber, currency });
+          if (currency === 'USD') {
+            donationStore.donations[showdownUsername] += amountNumber;
+          }
+
           updateStore();
 
           const totalDonations = donationStore.donations[showdownUsername];
 
-          if (amountUSD >= 5 && (is_public !== undefined) && is_public) {
-            const donationHtml = createDonationHtml(showdownUsername, amountUSD, url);
+          if ((is_public !== undefined) && is_public) {
+            const donationHtml = createDonationHtml(showdownUsername, currency, amountNumber, url);
             await showdownClient.send(`lobby|/addhtmlbox ${donationHtml}`);
           }
 
