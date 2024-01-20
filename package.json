@@ -16,6 +16,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/exchange-rates-api": "^1.0.0",
+    "@types/html-escaper": "^3.0.2",
     "@types/koa": "^2.13.4",
     "@types/koa-router": "^7.4.4",
     "@types/node": "^16.6.2",
@@ -26,6 +27,7 @@
     "@showderp/pokemon-showdown-ts": "^0.2.15",
     "discord.js": "^14.11.0",
     "dotenv": "^16.3.1",
+    "html-escaper": "^3.0.3",
     "koa": "^2.13.1",
     "koa-body": "^4.2.0",
     "koa-router": "^10.0.0"

@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { escape } from 'html-escaper';
 import { ManagedShowdownClient } from '@showderp/pokemon-showdown-ts';
 
 interface DonationStore {
@@ -28,7 +29,7 @@ const createDonationHtml = (username: string, message: string, currency: string,
     amountText = `<a href="${url}">${amountText}</a>`;
   }
 
-  return `<div><strong>${username}</strong> donated ${amountText}: "${message}"</div>`;
+  return `<div><strong>${username}</strong> donated ${amountText}: "${escape(message)}"</div>`;
 };
 
 const toID = (text: string) => ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');
