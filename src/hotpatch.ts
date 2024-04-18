@@ -47,6 +47,10 @@ const createHotpatchRequestUpdate = (hotpatchRequest: HotpatchRequest) => {
   return `lobby|/adduhtml hotpatch-request-${hotpatchRequest.requestId}, ${html}`;
 };
 
+const logWithPrefix = (prefix: string, message: string) => {
+  console.log(`[${prefix}]: ${message}`);
+};
+
 export const createHotpatchHandler = (
   hotpatchAdmin: string,
   hotpatchStorePath: string,
@@ -56,12 +60,15 @@ export const createHotpatchHandler = (
   let hotpatchEnabled = true;
   let hotpatchInProgress = false;
   const attemptRebuild = async (senderId: string) => {
+    const logPrefix = `${senderId}-${Date.now()}`;
+    logWithPrefix(logPrefix, 'Hotpatching...');
     if (!hotpatchEnabled) {
       await showdownClient.send(`|/pm ${senderId}, Hotpatching currently disabled`);
+      logWithPrefix(logPrefix, 'Hotpaching is currently disabled. Aborting hotpatch.');
       return;
     }
     const request: HotpatchRequest = {
-      requestId: `${senderId}-${Date.now()}`,
+      requestId: logPrefix,
       requester: senderId,
       progress: {
         buildClient: { text: 'Build client', status: 'NOT_STARTED' },
@@ -71,6 +78,8 @@ export const createHotpatchHandler = (
 
     if (hotpatchInProgress) {
       await showdownClient.send(`|/pm ${senderId}, Hotpatch already in progress -- please wait and try again`);
+      logWithPrefix(logPrefix, 'Hotpatch already in progres. Aborting hotpatch.');
+      return;
     }
 
     hotpatchInProgress = true;
@@ -85,7 +94,11 @@ export const createHotpatchHandler = (
         text: 'Building client...',
       };
       await showdownClient.send(createHotpatchRequestUpdate(request));
+
+      logWithPrefix(logPrefix, 'Building client...');
       execSync(`sh ${hotpatchBuildScriptPath}`);
+      logWithPrefix(logPrefix, 'Client built.');
+
       request.progress.buildClient = {
         status: 'COMPLETE',
         text: 'Client built -- Please refresh to see changes',
@@ -98,8 +111,12 @@ export const createHotpatchHandler = (
         text: 'Requesting hotpatches for data and chat plugins...',
       };
       await showdownClient.send(createHotpatchRequestUpdate(request));
+
+      logWithPrefix(logPrefix, 'Sending hotpatch requests...');
       await showdownClient.send('lobby|/hotpatch formats,notify');
       await showdownClient.send('lobby|/hotpatch chat,notify');
+      logWithPrefix(logPrefix, 'Hotpatch requests sent.');
+
       request.progress.hotpatch = {
         status: 'COMPLETE',
         text: 'Hotpatches requested -- Please await notification that hotpatching has succeeded',
@@ -107,7 +124,10 @@ export const createHotpatchHandler = (
       await showdownClient.send(createHotpatchRequestUpdate(request));
     } catch (e) {
       await showdownClient.send(`|/pm ${senderId}, Error while hotpatch, please contact and administrator`);
+      logWithPrefix(logPrefix, 'Unknown error occured while hotpatching');
     }
+
+    logWithPrefix(logPrefix, 'Hotpatch complete.');
 
     hotpatchInProgress = false;
   };
@@ -131,6 +151,8 @@ export const createHotpatchHandler = (
     if (pm.message.startsWith('$hotpatch')) {
       if (['hotpatch', 'admin'].includes(user)) {
         attemptRebuild(senderId);
+      } else {
+        console.log(`Unauthorized user ${user} tried to hotpatch.`);
       }
     } else if (pm.message.startsWith('$addhotpatch')) {
       if (toID(hotpatchAdmin) === senderId) {
@@ -140,7 +162,10 @@ export const createHotpatchHandler = (
           hotpatchStore.users[userId] = 'hotpatch';
           updateStore();
           await showdownClient.send(`|/pm ${senderId}, Successfully added ${userId}`);
+          console.log(`${user} added hotpatcher ${userId}.`);
         }
+      } else {
+        console.log(`Unauthorized user ${user} tried to add hotpatcher.`);
       }
     } else if (pm.message.startsWith('$removehotpatch')) {
       if (toID(hotpatchAdmin) === senderId) {
@@ -150,15 +175,23 @@ export const createHotpatchHandler = (
           delete hotpatchStore.users[userId];
           updateStore();
           await showdownClient.send(`|/pm ${senderId}, Successfully removed ${userId}`);
+          console.log(`${user} removed hotpatcher ${userId}.`);
         }
+      } else {
+        console.log(`Unauthorized user ${user} tried to remove hotpatcher.`);
       }
     } else if (pm.message.startsWith('$toggle')) {
-      if (toID(hotpatchAdmin) !== senderId) return;
-      hotpatchEnabled = !hotpatchEnabled;
-      if (hotpatchEnabled) {
-        await showdownClient.send(`|/pm ${senderId}, Hotpatching is enabled`);
+      if (toID(hotpatchAdmin) === senderId) {
+        hotpatchEnabled = !hotpatchEnabled;
+        if (hotpatchEnabled) {
+          await showdownClient.send(`|/pm ${senderId}, Hotpatching is enabled`);
+          console.log(`User ${user} enabled hotpatching.`);
+        } else {
+          await showdownClient.send(`|/pm ${senderId}, Hotpatching is disabled`);
+          console.log(`User ${user} disabled hotpatching.`);
+        }
       } else {
-        await showdownClient.send(`|/pm ${senderId}, Hotpatching is disabled`);
+        console.log(`Unauthorized user ${user} tried to toggle hotpatching.`);
       }
     }
   });
