@@ -3,7 +3,7 @@ import {
   EmitterWebhookEventName,
   Webhooks,
 } from '@octokit/webhooks';
-import { Commit, Repository, User } from '@octokit/webhooks-types';
+import { Commit, PullRequest, Repository, User } from '@octokit/webhooks-types';
 import { ManagedShowdownClient } from '@showderp/pokemon-showdown-ts';
 
 const shortenText = (textToShorten: string, maxLength: number) => {
@@ -50,6 +50,19 @@ const createPushHtml = ({ payload }: EmitterWebhookEvent<'push'>) => {
   return htmlContent + '</div>';
 };
 
+const createPullRequestOpenedHtml = (repository: Repository, pullRequest: PullRequest) => {
+  return `<div style="margin-bottom: 6px;"><a href="${pullRequest.url}"><strong>[${repository.full_name}] New pull request (#${pullRequest.number}): ${pullRequest.title}</strong></a></div>`;
+};
+
+const createPullRequestHtml = ({ payload }: EmitterWebhookEvent<'pull_request.opened'>) => {
+  let htmlContent = `<div>`;
+
+  htmlContent += createUserHtml(payload.sender);
+  htmlContent += createPullRequestOpenedHtml(payload.repository, payload.pull_request);
+
+  return htmlContent + '</div>';
+};
+
 export const createGithubHandler = (secret: string, showdownClient: ManagedShowdownClient) => {
   const webhooks = new Webhooks({
     secret,
@@ -60,6 +73,14 @@ export const createGithubHandler = (secret: string, showdownClient: ManagedShowd
 
     if (pushHtml) {
       await showdownClient.send(`lobby|/addhtmlbox ${pushHtml}`);
+    }
+  });
+
+  webhooks.on('pull_request.opened', async (pullRequestEvent) => {
+    const pullRequestHtml = createPullRequestHtml(pullRequestEvent);
+
+    if (pullRequestHtml) {
+      await showdownClient.send(`lobby|/addhtmlbox ${pullRequestHtml}`);
     }
   });
 
