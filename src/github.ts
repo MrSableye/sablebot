@@ -5,6 +5,7 @@ import {
 } from '@octokit/webhooks';
 import { Commit, PullRequest, Repository, User } from '@octokit/webhooks-types';
 import { ManagedShowdownClient } from '@showderp/pokemon-showdown-ts';
+import { BotSettings } from './types';
 
 const shortenText = (textToShorten: string, maxLength: number) => {
   if (textToShorten.length > maxLength) {
@@ -30,7 +31,11 @@ const createCommitHtml = (commit: Commit) => {
   return `<div><a href="${commit.url}"><code>${commit.id.slice(0, 7)}</code></a> ${shortenText(commit.message, 80)} - ${commit.author.name}</div>`;
 };
 
-const createPushHtml = ({ payload }: EmitterWebhookEvent<'push'>) => {
+const createHotpatchHtml = (showdownUsername: string) => {
+  return `<div><button class="button" name="send" value="/pm ${showdownUsername},$hotpatch">Hotpatch</button></div>`;
+};
+
+const createPushHtml = ({ payload }: EmitterWebhookEvent<'push'>, showdownUsername: string) => {
   let htmlContent = `<div>`;
 
   htmlContent += createUserHtml(payload.sender);
@@ -46,6 +51,7 @@ const createPushHtml = ({ payload }: EmitterWebhookEvent<'push'>) => {
     ];
   }
   htmlContent += commitElements.join('');
+  htmlContent += createHotpatchHtml(showdownUsername);
 
   return htmlContent + '</div>';
 };
@@ -63,13 +69,13 @@ const createPullRequestHtml = ({ payload }: EmitterWebhookEvent<'pull_request.op
   return htmlContent + '</div>';
 };
 
-export const createGithubHandler = (secret: string, showdownClient: ManagedShowdownClient) => {
+export const createGithubHandler = (secret: string, showdownClient: ManagedShowdownClient, { showdownUsername }: BotSettings) => {
   const webhooks = new Webhooks({
     secret,
   });
 
   webhooks.on('push', async (pushEvent) => {
-    const pushHtml = createPushHtml(pushEvent);
+    const pushHtml = createPushHtml(pushEvent, showdownUsername);
 
     if (pushHtml) {
       await showdownClient.send(`lobby|/addhtmlbox ${pushHtml}`);

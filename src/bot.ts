@@ -7,20 +7,7 @@ import { createGithubHandler } from './github';
 import { createKoFiDonationHandler } from './ko-fi';
 import { createDiscordHandler } from './discord';
 import { createHotpatchHandler } from './hotpatch';
-
-interface BotSettings {
-  showdownUsername: string;
-  showdownPassword: string;
-  httpServerPort: number;
-  webhookSecret: string;
-  koFiDonationStorePath: string;
-  koFiDonationSecret: string;
-  discordToken: string;
-  discordStorePath: string;
-  hotpatchAdmin: string;
-  hotpatchBuildScriptPath: string;
-  hotpatchStorePath: string;
-}
+import { BotSettings } from './types';
 
 const createShowdownClient = async (username: string, password: string) => {
   const showdownClient = new ManagedShowdownClient({
@@ -47,21 +34,23 @@ const createDiscordClient = async (token: string) => {
   return client;
 };
 
-export const createBot = async ({
-  showdownUsername,
-  showdownPassword,
-  httpServerPort,
-  webhookSecret,
-  koFiDonationStorePath,
-  koFiDonationSecret,
-  discordToken,
-  discordStorePath,
-  hotpatchAdmin,
-  hotpatchStorePath,
-  hotpatchBuildScriptPath,
-}: BotSettings) => {
+export const createBot = async (settings: BotSettings) => {
+  const {
+    showdownUsername,
+    showdownPassword,
+    httpServerPort,
+    webhookSecret,
+    koFiDonationStorePath,
+    koFiDonationSecret,
+    discordToken,
+    discordStorePath,
+    hotpatchAdmin,
+    hotpatchStorePath,
+    hotpatchBuildScriptPath,
+  } = settings;
+
   const showdownClient = await createShowdownClient(showdownUsername, showdownPassword);
-  const githubHandler = createGithubHandler(webhookSecret, showdownClient);
+  const githubHandler = createGithubHandler(webhookSecret, showdownClient, settings);
   const koFiHandler = createKoFiDonationHandler(koFiDonationStorePath, showdownClient);
   const discordClient = await createDiscordClient(discordToken);
   createDiscordHandler(discordClient, showdownClient, discordStorePath);
