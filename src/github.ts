@@ -57,7 +57,7 @@ const createPushHtml = ({ payload }: EmitterWebhookEvent<'push'>, showdownUserna
 };
 
 const createPullRequestOpenedHtml = (repository: Repository, pullRequest: PullRequest) => {
-  return `<div style="margin-bottom: 6px;"><a href="${pullRequest.url}"><strong>[${repository.full_name}] New pull request (#${pullRequest.number}): ${pullRequest.title}</strong></a></div>`;
+  return `<div style="margin-bottom: 6px;"><a href="${pullRequest.html_url}"><strong>[${repository.full_name}] New pull request (#${pullRequest.number}): ${pullRequest.title}</strong></a></div>`;
 };
 
 const createPullRequestHtml = ({ payload }: EmitterWebhookEvent<'pull_request.opened'>) => {
